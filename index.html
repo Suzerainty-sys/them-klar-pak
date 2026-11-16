@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ThemFlow — Kassehal Port</title>
+
+    <!-- PWA / Tablet Fuldskærms-App Indstillinger -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ThemFlow Port">
+    <meta name="theme-color" content="#1E4363">
+    <link rel="icon" type="image/png" href="ThemFlowApp.jpg">
+    <link rel="apple-touch-icon" href="ThemFlowApp.jpg">
+    <link rel="manifest" href="manifest.json">
+
+    <style>
+        :root {
+            --them-blue: #1E4363;
+            --bg-gray: #F3F5F8;
+            --text-dark: #1E293B;
+            --text-muted: #64748B;
+            --green: #16A34A;
+            --blue-accent: #2563EB;
+            --purple-accent: #7C3AED;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { margin: 0; background: var(--bg-gray); color: var(--text-dark); user-select: none; }
+
+        /* OPSTARTSSKÆRM (SPLASH SCREEN) */
+        #themflow-splash {
+            position: fixed;
+            inset: 0;
+            background-color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+        }
+        #themflow-splash img {
+            max-width: 380px;
+            width: 75%;
+            height: auto;
+            margin-bottom: 24px;
+        }
+        .splash-track {
+            width: 180px;
+            height: 4px;
+            background-color: #E2E8F0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        #splash-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--them-blue);
+            transition: width 1.6s ease-in-out;
+        }
+
+        header {
+            background: var(--them-blue);
+            color: white;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { margin: 0; font-size: 1.4rem; }
+        header .sub { font-size: 0.9rem; opacity: 0.85; margin-top: 3px; }
+
+        .main-grid {
+            max-width: 1180px;
+            margin: 32px auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            position: relative;
+        }
+
+        .main-grid::before {
+            content: "";
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            left: 50%;
+            width: 2px;
+            background: #CBD5E1;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        @media (max-width: 760px) {
+            .main-grid { grid-template-columns: 1fr; gap: 32px; }
+            .main-grid::before { display: none; }
+        }
+
+        .dept-section { padding: 8px 4px; }
+        .dept-header {
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #CBD5E1;
+        }
+        .dept-klargoering .dept-header { border-bottom-color: var(--blue-accent); }
+        .dept-pakkeri .dept-header { border-bottom-color: var(--purple-accent); }
+
+        .dept-section h2 { margin: 0 0 4px 0; font-size: 1.4rem; color: var(--them-blue); }
+        .dept-section p.desc { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
+
+        .stack-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .palle-btn {
+            background: #FFFFFF;
+            border: 2px solid #CBD5E1;
+            border-radius: 14px;
+            padding: 26px 20px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+        .palle-btn:hover { background: #F8FAFC; border-color: #94A3B8; }
+        .palle-btn:active { transform: scale(0.98); border-color: var(--them-blue); background: #EFF6FF; }
+
+        .palle-btn .icon { font-size: 2.4rem; }
+        .palle-btn .title { font-size: 1.2rem; font-weight: 700; display: block; color: var(--text-dark); }
+        .palle-btn .meta { font-size: 0.92rem; color: var(--text-muted); display: block; margin-top: 4px; }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+        }
+        .modal-header {
+            background: var(--them-blue);
+            color: white;
+            padding: 18px 22px;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.2rem; }
+        .counter-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            margin: 26px 0;
+        }
+        .counter-btn {
+            width: 68px; height: 68px;
+            border-radius: 14px;
+            border: 1px solid #CBD5E1;
+            background: #E2E8F0;
+            font-size: 2.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .counter-val {
+            width: 105px; height: 68px;
+            text-align: center;
+            font-size: 1.9rem;
+            font-weight: bold;
+            border: 2px solid #CBD5E1;
+            border-radius: 14px;
+        }
+        .modal-footer {
+            padding: 16px 22px;
+            background: #F8FAFC;
+            border-top: 1px solid #E2E8F0;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        .btn-cancel { background: #E2E8F0; border: none; padding: 14px 20px; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn-submit { background: var(--green); color: white; border: none; padding: 14px 24px; border-radius: 10px; font-weight: bold; font-size: 1.05rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- OPSTARTSSKÆRM -->
+<div id="themflow-splash">
+    <img src="themflow-logo.png" alt="ThemFlow">
+    <div class="splash-track">
+        <div id="splash-bar"></div>
+    </div>
+</div>
+<header>
+    <div>
+        <h1>ThemFlow — Kassehal Port</h1>
+        <div class="sub">Fælles Terminal: Klargøring & Pakkeri</div>
+    </div>
+</header>
+
+<div class="main-grid">
+
+    <!-- VENSTRE KOLONNE: KLARGØRING -->
+    <div class="dept-section dept-klargoering">
+        <div class="dept-header">
+            <h2>⚙️ KLARGØRING</h2>
+            <p class="desc">Registrer paller hentet ud af kassehallen</p>
+        </div>
+
+        <div class="stack-buttons">
+            <button class="palle-btn" onclick="aabnModal('Kassehal -> Klargøring', 'Them', 78, -1, 'Hent Them-paller til Klargøring')">
+                <span class="icon">📤</span>
+                <div>
+                    <span class="title">Hent Them-paller</span>
+                    <span class="meta">78 kasser pr. palle</span>
+                </div>
+            </button>
+
+            <button class="palle-btn" onclick="aabnModal('Kassehal -> Klargøring', 'Arla', 90, -1, 'Hent Arla-paller til Klargøring')">
+                <span class="icon">📤</span>
+                <div>
+                    <span class="title">Hent Arla-paller</span>
+                    <span class="meta">90 kasser pr. palle</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- HØJRE KOLONNE: PAKKERI -->
+    <div class="dept-section dept-pakkeri">
+        <div class="dept-header">
+            <h2>📦 PAKKERI</h2>
+            <p class="desc">Registrer Them-paller ud eller retur til kassehallen</p>
+        </div>
+
+        <div class="stack-buttons">
+            <button class="palle-btn" onclick="aabnModal('Kassehal -> Pakkeri', 'Them', 78, -1, 'Hent Them-paller til Pakkeri')">
+                <span class="icon">📤</span>
+                <div>
+                    <span class="title">Hent Them-paller</span>
+                    <span class="meta">78 kasser pr. palle ud</span>
+                </div>
+            </button>
+
+            <button class="palle-btn" onclick="aabnModal('Pakkeri -> Retur til Kassehal', 'Them', 78, 1, 'Sæt Them-paller RETUR til Kassehal')">
+                <span class="icon">↩️</span>
+                <div>
+                    <span class="title">Sæt Them-paller RETUR</span>
+                    <span class="meta">78 kasser pr. palle tilbage i hallen</span>
+                </div>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL TIL ANTAL -->
+<div class="modal-backdrop" id="palleModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitel">Hent Them-paller</h3>
+        </div>
+        <div style="padding: 22px; text-align: center;">
+            <p id="modalInfo" style="color:var(--text-muted); font-weight:600; margin:0;">78 kasser pr. palle</p>
+            <div class="counter-box">
+                <button class="counter-btn" onclick="skiftAntal(-1)">−</button>
+                <input type="number" id="palleAntal" class="counter-val" value="1" min="1">
+                <button class="counter-btn" onclick="skiftAntal(1)">+</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="lukModal()">Annuller</button>
+            <button class="btn-submit" id="btnGodkend" onclick="gemPalleLog()">✔ Godkend</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Opstartsbillede animation
+    window.addEventListener('DOMContentLoaded', () => {
+        const bar = document.getElementById('splash-bar');
+        const splash = document.getElementById('themflow-splash');
+        if (bar) setTimeout(() => { bar.style.width = '100%'; }, 50);
+        setTimeout(() => {
+            if (splash) {
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+            }
+        }, 1800);
+    });
+
+    // HUSK AT INDSÆTTE DIN RIGTIGE SUPABASE URL (inkl. /rest/v1/kasselog) OG ANON KEY HER:
+    const SUPABASE_URL = "https://pfzpjcwbeysqfqrzlhba.supabase.co/rest/v1/";
+    const SUPABASE_KEY = "sb_publishable__QIYphTus8gdIWRWtX3SLg_4Yy6r-YW";
+
+    let state = {};
+
+    function aabnModal(afdeling, type, faktor, fortegn, titel) {
+        state = { afdeling, type, faktor, fortegn };
+        document.getElementById('modalTitel').innerText = titel;
+        document.getElementById('modalInfo').innerText = `${type}-paller — ${faktor} kasser pr. palle`;
+        document.getElementById('palleAntal').value = 1;
+        document.getElementById('palleModal').classList.add('open');
+    }
+
+    function lukModal() {
+        document.getElementById('palleModal').classList.remove('open');
+    }
+
+    function skiftAntal(d) {
+        const el = document.getElementById('palleAntal');
+        el.value = Math.max(1, (parseInt(el.value) || 1) + d);
+    }
+
+    async function gemPalleLog() {
+        const btn = document.getElementById('btnGodkend');
+        btn.disabled = true;
+        btn.innerText = "Sender...";
+
+        const paller = Math.max(1, parseInt(document.getElementById('palleAntal').value) || 1);
+        const kasser = paller * state.faktor * state.fortegn;
+
+        try {
+            const res = await fetch(SUPABASE_URL, {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_KEY,
+                    "Authorization": "Bearer " + SUPABASE_KEY,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify({
+                    afdeling: state.afdeling,
+                    palletype: state.type,
+                    antal_paller: paller,
+                    antal_kasser: kasser
+                })
+            });
+
+            if (!res.ok) throw new Error(await res.text());
+            lukModal();
+            alert(`✔ Registreret: ${paller} ${state.type}-paller (${kasser} kasser)`);
+        } catch (err) {
+            alert("Netværksfejl: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "✔ Godkend";
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "ThemFlow — Kassehal Port",
+  "short_name": "ThemFlow Port",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#F3F5F8",
+  "theme_color": "#1E4363",
+  "icons": [
+    {
+      "src": "ThemFlowApp.jpg",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
